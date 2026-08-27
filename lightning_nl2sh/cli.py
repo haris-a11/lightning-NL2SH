@@ -6,14 +6,17 @@ import sys
 
 from . import __version__
 from .config import KEY, config_path, key_source, load, mask, set_key
-from .core import DEFAULT_MODEL, detect_shell, generate_command, shell_guessed
+from .core import base_url, detect_shell, generate_command, model, shell_guessed
 
 USAGE = """usage:
   lightning-nl2sh [--shell SHELL] [--] <task>   generate a command for <task>
-  lightning-nl2sh set-key [KEY]                 store your OpenRouter API key
+  lightning-nl2sh set-key [KEY]                 store your API key
   lightning-nl2sh config                        show the active configuration
   lightning-nl2sh --version
   lightning-nl2sh --help
+
+Any OpenAI-compatible API works: set NL2SH_BASE_URL and NL2SH_MODEL in the
+config file shown by `lightning-nl2sh config`.
 
 The generated command is the only thing written to stdout; errors go to stderr
 and exit 1, so shell integrations can stop on failure."""
@@ -32,7 +35,7 @@ def cmd_set_key(args):
             file=sys.stderr,
         )
     else:
-        value = getpass.getpass("OpenRouter API key: ")
+        value = getpass.getpass("API key: ")
     try:
         path = set_key(value)
     except (ValueError, OSError) as exc:
@@ -53,7 +56,8 @@ def cmd_config():
             shell, "  (guessed from $SHELL/platform)" if shell_guessed() else ""
         )
     )
-    print("model:       {}".format(os.environ.get("NL2SH_MODEL", DEFAULT_MODEL)))
+    print("base url:    {}".format(base_url()))
+    print("model:       {}".format(model()))
     if not api_key:
         return die("no API key configured - run: lightning-nl2sh set-key")
     return 0

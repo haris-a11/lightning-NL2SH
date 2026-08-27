@@ -1,11 +1,11 @@
-"""Shell profiles and OpenRouter command generation."""
-
 import os
 import sys
 
 import requests
 
-API_URL = "https://openrouter.ai/api/v1/chat/completions"
+from .config import KEY
+
+DEFAULT_BASE_URL = "https://openrouter.ai/api/v1"
 DEFAULT_MODEL = "qwen/qwen3-14b"
 
 ALIASES = {"dash": "sh", "ksh": "sh", "tcsh": "sh", "csh": "sh"}
@@ -89,27 +89,47 @@ def build_system_prompt(shell):
     )
 
 
+def base_url():
+    """Any OpenAI-compatible /chat/completions endpoint. Trailing slash tolerated."""
+    return os.environ.get("NL2SH_BASE_URL", DEFAULT_BASE_URL).rstrip("/")
+
+
+def model():
+    return os.environ.get("NL2SH_MODEL", DEFAULT_MODEL)
+
+
 def generate_command(task, shell=None):
+
     shell = (shell or detect_shell()).lower()
-    api_key = os.environ.get("OPENROUTER_API_KEY")
+    url, name = base_url(), model()
+    api_key = os.environ.get(KEY)
     if not api_key:
-        raise RuntimeError("no OPENROUTER_API_KEY - run: lightning-nl2sh set-key")
+        raise RuntimeError("no {} - run: lightning-nl2sh set-key".format(KEY))
+
+    prompt = ("/no_think\n" + task) if "qwen" in name.lower() else task
+    payload = {
+        "model": name,
+        "messages": [
+            {"role": "system", "content": build_system_prompt(shell)},
+            {"role": "user", "content": prompt},
+        ],
+        "max_tokens": 100,
+    }
+    if "openrouter.ai" in url:
+
+        payload["reasoning"] = {"effort": "none"}
 
     response = requests.post(
-        API_URL,
+        url + "/chat/completions",
         headers={"Authorization": "Bearer " + api_key},
-        json={
-            "model": os.environ.get("NL2SH_MODEL", DEFAULT_MODEL),
-            "messages": [
-                {"role": "system", "content": build_system_prompt(shell)},
-                {"role": "user", "content": "/no_think\n" + task},
-            ],
-            "max_tokens": 100,
-            "reasoning": {"effort": "none"},
-        },
+        json=payload,
         timeout=30,
     )
-    response.raise_for_status()
-    text = response.json()["choices"][0]["message"]["content"]
+    if not response.ok:
+
+        raise RuntimeError(
+            "{} from {}: {}".format(response.status_code, url, response.text[:300])
+        )
+    text = response.json()["choices"][0]["message"]["content"] or ""
     kept = [ln for ln in text.strip().splitlines() if not ln.strip().startswith("```")]
     return "\n".join(kept).strip()

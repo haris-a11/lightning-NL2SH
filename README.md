@@ -2,7 +2,7 @@
 
 ## 1. What it does
 
-`lightning-nl2sh` turns a plain-English task into a shell command, using an OpenRouter model, and generates it in the syntax of **the shell you are actually using**.
+`lightning-nl2sh` turns a plain-English task into a shell command, using any OpenAI-compatible chat completions API (OpenRouter by default), and generates it in the syntax of **the shell you are actually using**.
 
 ```console
 $ lightning-nl2sh "find all python files modified today"
@@ -36,11 +36,14 @@ From a checkout:
 pip install .
 ```
 
-Then store your [OpenRouter](https://openrouter.ai/) key:
+Then store your API key:
 
 ```bash
 lightning-nl2sh set-key
 ```
+
+The default provider is [OpenRouter](https://openrouter.ai/); see
+[Using another provider](#using-another-provider) to point it somewhere else.
 
 ## 3. Shell setup
 
@@ -163,7 +166,7 @@ Set `NL2SH_SHELL` once with `setx NL2SH_SHELL cmd`.
 ```bash
 lightning-nl2sh set-key           # prompts, never echoes, never hits your history
 lightning-nl2sh set-key sk-or-... # inline; warns that this lands in shell history
-lightning-nl2sh config            # show config path, masked key, shell, model
+lightning-nl2sh config            # show config path, masked key, shell, base url, model
 ```
 
 `config` exits `1` when no API key is configured.
@@ -175,16 +178,60 @@ The config file is `<config dir>/.env`, where the config directory is the first 
 3. `~/.config/lightning-nl2sh` (works on Windows too — `Path.home()`)
 
 It is written atomically and created with mode `0600` where the OS supports it.
-`set-key` rewrites only the `OPENROUTER_API_KEY` line; comments and every other variable in the file are preserved.
+`set-key` rewrites only the `NL2SH_API_KEY` line; comments and every other variable in the file are preserved.
 
 Environment variables:
 
-| Variable             | Meaning                                                            |
-| -------------------- | ------------------------------------------------------------------ |
-| `OPENROUTER_API_KEY` | API key. A real environment variable always beats the config file. |
-| `NL2SH_MODEL`        | Model slug. Default `qwen/qwen3-14b`.                              |
-| `NL2SH_SHELL`        | Shell ID, exported by the shell integration.                       |
-| `NL2SH_CONFIG_DIR`   | Override the config directory.                                     |
+| Variable          | Meaning                                                                             |
+| ----------------- | ----------------------------------------------------------------------------------- |
+| `NL2SH_API_KEY`   | API key. A real environment variable always beats the config file.                  |
+| `NL2SH_BASE_URL`  | API base URL. Default `https://openrouter.ai/api/v1`. `/chat/completions` is appended. |
+| `NL2SH_MODEL`     | Model slug. Default `qwen/qwen3-14b`.                                               |
+| `NL2SH_SHELL`     | Shell ID, exported by the shell integration.                                        |
+| `NL2SH_CONFIG_DIR`| Override the config directory.                                                      |
+
+> **Upgrading from 0.1.0:** the key variable was renamed from `OPENROUTER_API_KEY`
+> to `NL2SH_API_KEY`. Re-run `lightning-nl2sh set-key`, or rename the line in your
+> config file.
+
+### Using another provider
+
+The whole config `.env` is loaded, not just the key line — so a provider is three
+variables in that one file. There is no separate CLI command for it; run
+`lightning-nl2sh config` to find the file and edit it.
+
+```ini
+# ~/.config/lightning-nl2sh/.env
+NL2SH_BASE_URL=https://api.openai.com/v1
+NL2SH_API_KEY=sk-...
+NL2SH_MODEL=gpt-4o-mini
+```
+
+| Provider   | `NL2SH_BASE_URL`                      |
+| ---------- | ------------------------------------- |
+| OpenRouter | `https://openrouter.ai/api/v1` (default) |
+| OpenAI     | `https://api.openai.com/v1`           |
+| Groq       | `https://api.groq.com/openai/v1`      |
+| DeepSeek   | `https://api.deepseek.com/v1`         |
+| Together   | `https://api.together.xyz/v1`         |
+| Ollama     | `http://localhost:11434/v1` (any non-empty key) |
+| vLLM / LM Studio | your server's `/v1`             |
+
+You can also test one without touching the config file:
+
+```bash
+NL2SH_BASE_URL=https://api.groq.com/openai/v1 \
+NL2SH_MODEL=llama-3.3-70b-versatile \
+NL2SH_API_KEY=gsk_... \
+  lightning-nl2sh "find python files modified today"
+```
+
+**Limits.** The endpoint must accept an OpenAI-shaped `POST /chat/completions`
+with an `Authorization: Bearer` token. Anthropic and Gemini work through their
+OpenAI-compatibility base URLs, not their native APIs; Azure OpenAI, which
+authenticates with an `api-key` header, is not supported. Two provider-specific
+request tweaks are applied automatically and only where they belong: OpenRouter's
+`reasoning` field, and Qwen's `/no_think` token.
 
 ## 5. Direct use
 

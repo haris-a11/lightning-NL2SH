@@ -5,7 +5,7 @@ from pathlib import Path
 
 from dotenv import dotenv_values, find_dotenv, load_dotenv
 
-KEY = "OPENROUTER_API_KEY"
+KEY = "NL2SH_API_KEY"
 
 
 def config_dir():
@@ -22,16 +22,14 @@ def config_path():
 
 
 def load():
-    """Project .env, then global config, with the real environment winning over both."""
-    real = os.environ.get(KEY)
+    """Project .env, then global config. override=False means the real environment
+    wins over both, and the project .env wins over the global config."""
     load_dotenv(find_dotenv(usecwd=True))  # cwd-relative, not package-relative
     load_dotenv(config_path(), override=False)
-    if real:
-        os.environ[KEY] = real
 
 
 def set_key(value):
-    """Rewrite only the OPENROUTER_API_KEY line of the config .env, atomically."""
+    """Rewrite only the NL2SH_API_KEY line of the config .env, atomically."""
     value = value.strip().strip("'\"").strip()
     if not value:
         raise ValueError("empty API key")
