@@ -30,11 +30,31 @@ Supported shell IDs: `bash`, `zsh`, `fish`, `sh`, `dash`, `ksh`, `tcsh`, `csh`,
 pip install lightning-nl2sh
 ```
 
-From a checkout:
+Or with [pipx](https://pipx.pypa.io/), which keeps it out of your project environments:
 
 ```bash
+pipx install lightning-nl2sh
+```
+
+### From this repo
+
+```bash
+git clone https://github.com/haris-a11/lightning-NL2SH.git
+cd lightning-NL2SH
 pip install .
 ```
+
+For development, install it editable so your edits take effect without reinstalling:
+
+```bash
+python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -e .
+python tests/test_nl2sh.py      # 7 checks, no network, no pytest needed
+```
+
+`pip install -e .` puts `lightning-nl2sh` on your PATH only while that venv is
+active. If you want the shell integration in section 3 to work from any
+directory, use `pipx install .` from the checkout instead.
 
 Then store your API key:
 
@@ -182,13 +202,13 @@ It is written atomically and created with mode `0600` where the OS supports it.
 
 Environment variables:
 
-| Variable          | Meaning                                                                             |
-| ----------------- | ----------------------------------------------------------------------------------- |
-| `NL2SH_API_KEY`   | API key. A real environment variable always beats the config file.                  |
-| `NL2SH_BASE_URL`  | API base URL. Default `https://openrouter.ai/api/v1`. `/chat/completions` is appended. |
-| `NL2SH_MODEL`     | Model slug. Default `qwen/qwen3-14b`.                                               |
-| `NL2SH_SHELL`     | Shell ID, exported by the shell integration.                                        |
-| `NL2SH_CONFIG_DIR`| Override the config directory.                                                      |
+| Variable           | Meaning                                                                                |
+| ------------------ | -------------------------------------------------------------------------------------- |
+| `NL2SH_API_KEY`    | API key. A real environment variable always beats the config file.                     |
+| `NL2SH_BASE_URL`   | API base URL. Default `https://openrouter.ai/api/v1`. `/chat/completions` is appended. |
+| `NL2SH_MODEL`      | Model slug. Default `qwen/qwen3-14b`.                                                  |
+| `NL2SH_SHELL`      | Shell ID, exported by the shell integration.                                           |
+| `NL2SH_CONFIG_DIR` | Override the config directory.                                                         |
 
 > **Upgrading from 0.1.0:** the key variable was renamed from `OPENROUTER_API_KEY`
 > to `NL2SH_API_KEY`. Re-run `lightning-nl2sh set-key`, or rename the line in your
@@ -207,15 +227,15 @@ NL2SH_API_KEY=sk-...
 NL2SH_MODEL=gpt-4o-mini
 ```
 
-| Provider   | `NL2SH_BASE_URL`                      |
-| ---------- | ------------------------------------- |
-| OpenRouter | `https://openrouter.ai/api/v1` (default) |
-| OpenAI     | `https://api.openai.com/v1`           |
-| Groq       | `https://api.groq.com/openai/v1`      |
-| DeepSeek   | `https://api.deepseek.com/v1`         |
-| Together   | `https://api.together.xyz/v1`         |
-| Ollama     | `http://localhost:11434/v1` (any non-empty key) |
-| vLLM / LM Studio | your server's `/v1`             |
+| Provider         | `NL2SH_BASE_URL`                                |
+| ---------------- | ----------------------------------------------- |
+| OpenRouter       | `https://openrouter.ai/api/v1` (default)        |
+| OpenAI           | `https://api.openai.com/v1`                     |
+| Groq             | `https://api.groq.com/openai/v1`                |
+| DeepSeek         | `https://api.deepseek.com/v1`                   |
+| Together         | `https://api.together.xyz/v1`                   |
+| Ollama           | `http://localhost:11434/v1` (any non-empty key) |
+| vLLM / LM Studio | your server's `/v1`                             |
 
 You can also test one without touching the config file:
 
