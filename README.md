@@ -26,23 +26,51 @@ Supported shell IDs: `bash`, `zsh`, `fish`, `sh`, `dash`, `ksh`, `tcsh`, `csh`,
 
 ## 2. Install
 
+This is a command-line tool, so install it into its own environment rather than into a Python project. Either of these works and puts `lightning-nl2sh` on your PATH:
+
 ```bash
+uv tool install lightning-nl2sh     # https://docs.astral.sh/uv/
+pipx install lightning-nl2sh        # https://pipx.pypa.io/
+```
+
+Both drop the executable in `~/.local/bin`. If your shell can't find it afterwards, that directory is not on your `PATH` — `uv tool update-shell` or `pipx ensurepath` fixes it, then restart your shell.
+
+<details>
+<summary><code>pip install</code> and the "externally-managed-environment" error</summary>
+
+On Debian, Ubuntu, Fedora and most current distros, `pip install lightning-nl2sh`
+fails with:
+
+```text
+error: externally-managed-environment
+× This environment is externally managed
+```
+
+That is [PEP 668](https://peps.python.org/pep-0668/): your system Python belongs
+to the OS package manager and pip refuses to write into it. Use `uv tool install`
+or `pipx install` above, which is what the error message itself recommends.
+
+Plain `pip install lightning-nl2sh` is still correct **inside a virtualenv** —
+there is no PEP 668 marker there:
+
+```bash
+python3 -m venv .venv && source .venv/bin/activate
 pip install lightning-nl2sh
 ```
 
-Or with [pipx](https://pipx.pypa.io/), which keeps it out of your project environments:
+Do not reach for `--break-system-packages`. It does what it says.
 
-```bash
-pipx install lightning-nl2sh
-```
+</details>
 
 ### From this repo
 
 ```bash
 git clone https://github.com/haris-a11/lightning-NL2SH.git
 cd lightning-NL2SH
-pip install .
+uv tool install .        # or: pipx install .
 ```
+
+Same PEP 668 caveat as above — a bare `pip install .` fails on most distros.
 
 For development, install it editable so your edits take effect without reinstalling:
 
@@ -54,7 +82,7 @@ python tests/test_nl2sh.py      # 7 checks, no network, no pytest needed
 
 `pip install -e .` puts `lightning-nl2sh` on your PATH only while that venv is
 active. If you want the shell integration in section 3 to work from any
-directory, use `pipx install .` from the checkout instead.
+directory, use `uv tool install .` (or `pipx install .`) from the checkout instead.
 
 Then store your API key:
 
